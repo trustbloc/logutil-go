@@ -20,7 +20,7 @@ fi
 
 # Running vcs unit tests
 echo "logutil-go unit tests..."
-PKGS=`go list github.com/trustbloc/logutil/... 2> /dev/null | \
+PKGS=`go list github.com/trustbloc/logutil-go/... 2> /dev/null | \
                                                   grep -v /mocks`
 go test $PKGS -count=1 -race -coverprofile=profile.out -covermode=atomic -timeout=10m
 amend_coverage_file

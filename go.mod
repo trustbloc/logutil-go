@@ -2,7 +2,7 @@
 //
 // SPDX-License-Identifier: Apache-2.0
 
-module github.com/trustbloc/logutil
+module github.com/trustbloc/logutil-go
 
 go 1.19
 

@@ -60,6 +60,7 @@ func TestStandardFields(t *testing.T) {
 		topic := "some topic"
 		msg := "Some message"
 		hostURL := "https://localhost:8080"
+		address := "https://localhost:8080"
 		responseBody := []byte("response body")
 		token := "someToken"
 		totalRequests := 10
@@ -84,6 +85,8 @@ func TestStandardFields(t *testing.T) {
 		profileID := "some profile id"
 		parameter := "param1"
 		parameters := &mockObject{Field1: "param1", Field2: 4612}
+		brokers := []string{"broker"}
+		totalMessages := 3
 
 		dockerComposeCmd := strings.Join([]string{
 			"docker-compose",
@@ -127,6 +130,9 @@ func TestStandardFields(t *testing.T) {
 			WithUserLogLevel(DEBUG.String()),
 			WithVPToken(vpToken),
 			WithWorkers(workers),
+			WithAddress(address),
+			WithMessageBrokers(brokers),
+			WithTotalMessages(totalMessages),
 		)
 
 		t.Logf(stdOut.String())
@@ -160,6 +166,9 @@ func TestStandardFields(t *testing.T) {
 		require.Equal(t, presDefID, l.PresDefID)
 		require.Equal(t, state, l.State)
 		require.Equal(t, profileID, l.ProfileID)
+		require.Equal(t, address, l.Address)
+		require.Equal(t, brokers, l.MessageBrokers)
+		require.Equal(t, totalMessages, l.TotalMessages)
 	})
 
 	t.Run("json fields 2", func(t *testing.T) {
@@ -219,6 +228,9 @@ type logData struct {
 	UserLogLevel        string      `json:"userLogLevel"`
 	VPToken             string      `json:"vpToken"`
 	Workers             int         `json:"workers"`
+	Address             string      `json:"address"`
+	MessageBrokers      []string    `json:"message-brokers"`
+	TotalMessages       int         `json:"total-messages"`
 }
 
 func unmarshalLogData(t *testing.T, b []byte) *logData {

@@ -18,7 +18,7 @@ if [ -f profile.out ]; then
 fi
 }
 
-# Running vcs unit tests
+# Running logutil-go unit tests
 echo "logutil-go unit tests..."
 PKGS=`go list github.com/trustbloc/logutil-go/... 2> /dev/null | \
                                                   grep -v /mocks`

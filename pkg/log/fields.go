@@ -16,6 +16,7 @@ import (
 // Log Fields.
 const (
 	FieldAdditionalMessage   = "additionalMessage"
+	FieldAddress             = "address"
 	FieldCertPoolSize        = "certPoolSize"
 	FieldCommand             = "command"
 	FieldConcurrencyRequests = "concurrencyRequests"
@@ -28,20 +29,22 @@ const (
 	FieldIDToken             = "idToken"
 	FieldJSON                = "json"
 	FieldJSONResolution      = "jsonResolution"
+	FieldMessageBrokers      = "message-brokers"
 	FieldName                = "name"
 	FieldParameter           = "parameter"
 	FieldParameters          = "parameters"
 	FieldPath                = "path"
 	FieldPresDefID           = "presDefinitionID"
 	FieldProfileID           = "profileID"
-	FieldResponseBody        = "responseBody"
 	FieldResponse            = "response"
+	FieldResponseBody        = "responseBody"
 	FieldResponses           = "responses"
+	FieldService             = "service"
 	FieldSleep               = "sleep"
 	FieldState               = "state"
-	FieldService             = "service"
 	FieldToken               = "token"
 	FieldTopic               = "topic"
+	FieldTotalMessages       = "total-messages"
 	FieldTotalRequests       = "totalRequests"
 	FieldTxID                = "transactionID"
 	FieldURL                 = "url"
@@ -234,4 +237,19 @@ func WithState(state string) zap.Field {
 // WithProfileID sets the presentation definition id field.
 func WithProfileID(id string) zap.Field {
 	return zap.String(FieldProfileID, id)
+}
+
+// WithAddress sets the address field.
+func WithAddress(address string) zap.Field {
+	return zap.String(FieldAddress, address)
+}
+
+// WithMessageBrokers sets the topic field.
+func WithMessageBrokers(value []string) zap.Field {
+	return zap.Any(FieldMessageBrokers, value)
+}
+
+// WithTotalMessages sets the total messages field.
+func WithTotalMessages(totalMessages int) zap.Field {
+	return zap.Int(FieldTotalMessages, totalMessages)
 }

@@ -21,7 +21,6 @@ const (
 	FieldHTTPStatus    = "httpStatus"
 	FieldHostURL       = "hostURL"
 	FieldID            = "id"
-	FieldIDToken       = "idToken"
 	FieldJSON          = "json"
 	FieldName          = "name"
 	FieldParameter     = "parameter"
@@ -151,11 +150,6 @@ func WithSleep(sleep time.Duration) zap.Field {
 // WithDuration sets the duration field.
 func WithDuration(value time.Duration) zap.Field {
 	return zap.Duration(FieldDuration, value)
-}
-
-// WithIDToken sets the id token field.
-func WithIDToken(idToken string) zap.Field {
-	return zap.String(FieldIDToken, idToken)
 }
 
 // WithTxID sets the transaction id field.

@@ -67,7 +67,6 @@ func TestStandardFields(t *testing.T) {
 		json := "{\"some\":\"json object\"}"
 		sleep := time.Second * 10
 		duration := time.Second * 20
-		idToken := "some id token"
 		txID := "some tx id"
 		state := "some state"
 		profileID := "some profile id"
@@ -81,7 +80,6 @@ func TestStandardFields(t *testing.T) {
 			WithHTTPStatus(http.StatusNotFound),
 			WithHostURL(hostURL),
 			WithID(id),
-			WithIDToken(idToken),
 			WithJSON(json),
 			WithName(name),
 			WithParameter(parameter),
@@ -118,7 +116,6 @@ func TestStandardFields(t *testing.T) {
 		require.Equal(t, url, l.URL)
 		require.Equal(t, json, l.JSON)
 		require.Equal(t, sleep.String(), l.Sleep)
-		require.Equal(t, idToken, l.IDToken)
 		require.Equal(t, txID, l.TxID)
 		require.Equal(t, state, l.State)
 		require.Equal(t, profileID, l.ProfileID)
@@ -145,7 +142,6 @@ type logData struct {
 	HTTPStatus        int         `json:"httpStatus"`
 	HostURL           string      `json:"hostURL"`
 	ID                string      `json:"id"`
-	IDToken           string      `json:"idToken"`
 	JSON              string      `json:"json"`
 	Name              string      `json:"name"`
 	Parameter         string      `json:"parameter"`

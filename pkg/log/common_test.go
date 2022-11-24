@@ -16,37 +16,18 @@ import (
 func TestCommonLogs(t *testing.T) {
 	const module = "test_module"
 
-	t.Run("InvalidParameterValue", func(t *testing.T) {
-		stdErr := newMockWriter()
-
-		logger := New(module,
-			WithStdErr(stdErr),
-			WithFields(WithService("myservice")),
-		)
-
-		InvalidParameterValue(logger, "param1", errors.New("invalid integer"))
-
-		t.Logf(stdErr.String())
-
-		require.Contains(t, stdErr.Buffer.String(), `Invalid parameter value`)
-		require.Contains(t, stdErr.Buffer.String(), `"service": "myservice"`)
-		require.Contains(t, stdErr.Buffer.String(), `"parameter": "param1"`)
-		require.Contains(t, stdErr.Buffer.String(), `"error": "invalid integer"`)
-		require.Contains(t, stdErr.Buffer.String(), "log/common_test.go")
-	})
-
 	t.Run("CloseIteratorError", func(t *testing.T) {
 		stdOut := newMockWriter()
 
 		logger := New(module,
 			WithStdOut(stdOut),
-			WithFields(WithService("myservice")),
+			WithFields(WithAddress("some.address")),
 		)
 
 		CloseIteratorError(logger, errors.New("iterator error"))
 
 		require.Contains(t, stdOut.Buffer.String(), `Error closing iterator`)
-		require.Contains(t, stdOut.Buffer.String(), `"service": "myservice"`)
+		require.Contains(t, stdOut.Buffer.String(), `"address": "some.address"`)
 		require.Contains(t, stdOut.Buffer.String(), `"error": "iterator error"`)
 		require.Contains(t, stdOut.Buffer.String(), "log/common_test.go")
 	})
@@ -56,13 +37,13 @@ func TestCommonLogs(t *testing.T) {
 
 		logger := New(module,
 			WithStdOut(stdOut),
-			WithFields(WithService("myservice")),
+			WithFields(WithAddress("some.address")),
 		)
 
 		CloseResponseBodyError(logger, errors.New("response body error"))
 
 		require.Contains(t, stdOut.Buffer.String(), `Error closing response body`)
-		require.Contains(t, stdOut.Buffer.String(), `"service": "myservice"`)
+		require.Contains(t, stdOut.Buffer.String(), `"address": "some.address"`)
 		require.Contains(t, stdOut.Buffer.String(), `"error": "response body error"`)
 		require.Contains(t, stdOut.Buffer.String(), "log/common_test.go")
 	})
@@ -72,13 +53,13 @@ func TestCommonLogs(t *testing.T) {
 
 		logger := New(module,
 			WithStdErr(stdErr),
-			WithFields(WithService("myservice")),
+			WithFields(WithAddress("some.address")),
 		)
 
 		WriteResponseBodyError(logger, errors.New("response body error"))
 
 		require.Contains(t, stdErr.Buffer.String(), `Error writing response body`)
-		require.Contains(t, stdErr.Buffer.String(), `"service": "myservice"`)
+		require.Contains(t, stdErr.Buffer.String(), `"address": "some.address"`)
 		require.Contains(t, stdErr.Buffer.String(), `"error": "response body error"`)
 		require.Contains(t, stdErr.Buffer.String(), "log/common_test.go")
 	})
@@ -88,13 +69,13 @@ func TestCommonLogs(t *testing.T) {
 
 		logger := New(module,
 			WithStdErr(stdErr),
-			WithFields(WithService("myservice")),
+			WithFields(WithAddress("some.address")),
 		)
 
 		ReadRequestBodyError(logger, errors.New("request body error"))
 
 		require.Contains(t, stdErr.Buffer.String(), `Error reading request body`)
-		require.Contains(t, stdErr.Buffer.String(), `"service": "myservice"`)
+		require.Contains(t, stdErr.Buffer.String(), `"address": "some.address"`)
 		require.Contains(t, stdErr.Buffer.String(), `"error": "request body error"`)
 		require.Contains(t, stdErr.Buffer.String(), "log/common_test.go")
 	})
@@ -106,13 +87,13 @@ func TestCommonLogs(t *testing.T) {
 
 		logger := New(module,
 			WithStdOut(stdOut),
-			WithFields(WithService("myservice")),
+			WithFields(WithAddress("some.address")),
 		)
 
 		WroteResponse(logger, []byte("some response"))
 
 		require.Contains(t, stdOut.Buffer.String(), `Wrote response`)
-		require.Contains(t, stdOut.Buffer.String(), `"service": "myservice"`)
+		require.Contains(t, stdOut.Buffer.String(), `"address": "some.address"`)
 		require.Contains(t, stdOut.Buffer.String(), `"response": "some response"`)
 		require.Contains(t, stdOut.Buffer.String(), "log/common_test.go")
 	})

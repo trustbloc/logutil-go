@@ -8,11 +8,6 @@ package log
 
 import "go.uber.org/zap"
 
-// InvalidParameterValue outputs an 'invalid parameter' log to the given logger.
-func InvalidParameterValue(log *Log, param string, err error) {
-	log.WithOptions(zap.AddCallerSkip(1)).Error("Invalid parameter value", WithParameter(param), WithError(err))
-}
-
 // CloseIteratorError outputs a 'close iterator' error log to the given logger.
 func CloseIteratorError(log *Log, err error) {
 	log.WithOptions(zap.AddCallerSkip(1)).Warn("Error closing iterator", WithError(err))

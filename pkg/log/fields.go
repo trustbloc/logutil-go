@@ -15,30 +15,32 @@ import (
 
 // Log Fields.
 const (
-	FieldAddress       = "address"
-	FieldCommand       = "command"
-	FieldDuration      = "duration"
-	FieldHTTPStatus    = "httpStatus"
-	FieldHostURL       = "hostURL"
-	FieldID            = "id"
-	FieldJSON          = "json"
-	FieldName          = "name"
-	FieldParameter     = "parameter"
-	FieldParameters    = "parameters"
-	FieldPath          = "path"
-	FieldProfileID     = "profileID"
-	FieldResponse      = "response"
-	FieldResponseBody  = "responseBody"
-	FieldResponses     = "responses"
-	FieldService       = "service"
-	FieldSleep         = "sleep"
-	FieldState         = "state"
-	FieldToken         = "token"
-	FieldTopic         = "topic"
-	FieldTotalMessages = "total-messages"
-	FieldTotalRequests = "totalRequests"
-	FieldTxID          = "transactionID"
-	FieldURL           = "url"
+	FieldAdditionalMessage = "additionalMessage"
+	FieldAddress           = "address"
+	FieldCommand           = "command"
+	FieldDuration          = "duration"
+	FieldEvent             = "event"
+	FieldHTTPStatus        = "httpStatus"
+	FieldHostURL           = "hostURL"
+	FieldID                = "id"
+	FieldJSON              = "json"
+	FieldName              = "name"
+	FieldParameter         = "parameter"
+	FieldParameters        = "parameters"
+	FieldPath              = "path"
+	FieldProfileID         = "profileID"
+	FieldResponse          = "response"
+	FieldResponseBody      = "responseBody"
+	FieldResponses         = "responses"
+	FieldService           = "service"
+	FieldSleep             = "sleep"
+	FieldState             = "state"
+	FieldToken             = "token"
+	FieldTopic             = "topic"
+	FieldTotalMessages     = "total-messages"
+	FieldTotalRequests     = "totalRequests"
+	FieldTxID              = "transactionID"
+	FieldURL               = "url"
 )
 
 // ObjectMarshaller uses reflection to marshal an object's fields.
@@ -102,6 +104,11 @@ func WithTopic(value string) zap.Field {
 	return zap.String(FieldTopic, value)
 }
 
+// WithAdditionalMessage sets the additional message field.
+func WithAdditionalMessage(msg string) zap.Field {
+	return zap.String(FieldAdditionalMessage, msg)
+}
+
 // WithHostURL sets the hostURL field.
 func WithHostURL(hostURL string) zap.Field {
 	return zap.String(FieldHostURL, hostURL)
@@ -150,6 +157,11 @@ func WithSleep(sleep time.Duration) zap.Field {
 // WithDuration sets the duration field.
 func WithDuration(value time.Duration) zap.Field {
 	return zap.Duration(FieldDuration, value)
+}
+
+// WithEvent sets the event field.
+func WithEvent(event interface{}) zap.Field {
+	return zap.Inline(NewObjectMarshaller(FieldEvent, event))
 }
 
 // WithTxID sets the transaction id field.

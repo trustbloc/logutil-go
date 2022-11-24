@@ -9,6 +9,7 @@ package log
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"testing"
 	"time"
@@ -56,6 +57,7 @@ func TestStandardFields(t *testing.T) {
 		name := "Joe"
 		command := "some command"
 		topic := "some topic"
+		msg := "Some message"
 		hostURL := "https://localhost:8080"
 		address := "https://localhost:8080"
 		responseBody := []byte("response body")
@@ -67,6 +69,10 @@ func TestStandardFields(t *testing.T) {
 		json := "{\"some\":\"json object\"}"
 		sleep := time.Second * 10
 		duration := time.Second * 20
+		event := &mockObject{
+			Field1: "event1",
+			Field2: 123,
+		}
 		txID := "some tx id"
 		state := "some state"
 		profileID := "some profile id"
@@ -75,8 +81,10 @@ func TestStandardFields(t *testing.T) {
 		totalMessages := 3
 
 		logger.Info("Some message",
+			WithAdditionalMessage(msg),
 			WithCommand(command),
 			WithDuration(duration),
+			WithEvent(event),
 			WithHTTPStatus(http.StatusNotFound),
 			WithHostURL(hostURL),
 			WithID(id),
@@ -105,6 +113,7 @@ func TestStandardFields(t *testing.T) {
 		require.Equal(t, 404, l.HTTPStatus)
 		require.Equal(t, id, l.ID)
 		require.Equal(t, name, l.Name)
+		require.Equal(t, msg, l.AdditionalMessage)
 		require.Equal(t, command, l.Command)
 		require.Equal(t, topic, l.Topic)
 		require.Equal(t, hostURL, l.HostURL)
@@ -121,6 +130,8 @@ func TestStandardFields(t *testing.T) {
 		require.Equal(t, profileID, l.ProfileID)
 		require.Equal(t, address, l.Address)
 		require.Equal(t, totalMessages, l.TotalMessages)
+		require.Equal(t, fmt.Sprint(duration), l.Duration)
+		require.Equal(t, event, l.Event)
 	})
 }
 
@@ -139,6 +150,7 @@ type logData struct {
 	AdditionalMessage string      `json:"additionalMessage"`
 	Command           string      `json:"command"`
 	Duration          string      `json:"duration"`
+	Event             *mockObject `json:"event"`
 	HTTPStatus        int         `json:"httpStatus"`
 	HostURL           string      `json:"hostURL"`
 	ID                string      `json:"id"`

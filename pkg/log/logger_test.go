@@ -8,9 +8,11 @@ package log
 
 import (
 	"bytes"
+	"context"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 type mockWriter struct {
@@ -334,6 +336,36 @@ func TestLogLevels(t *testing.T) {
 	require.True(t, mlevel.isEnabled("module-xyz-random-module", WARNING))
 	require.True(t, mlevel.isEnabled("module-xyz-random-module", INFO))
 	require.False(t, mlevel.isEnabled("module-xyz-random-module", DEBUG))
+}
+
+func TestContextLogger(t *testing.T) {
+	tracer := trace.NewTracerProvider().Tracer("unit-test")
+
+	const module = "context-module"
+
+	SetLevel(module, DEBUG)
+
+	t.Run("OpenTelemetry traceing", func(t *testing.T) {
+		stdOut := newMockWriter()
+		stdErr := newMockWriter()
+
+		logger := New(module, WithStdOut(stdOut), WithStdErr(stdErr))
+
+		ctx, span := tracer.Start(context.Background(), "parent-span")
+		defer span.End()
+
+		logger.Debugc(ctx, "Sample debug log")
+		logger.Infoc(ctx, "Sample info log")
+		logger.Warnc(ctx, "Sample warn log")
+		logger.Errorc(ctx, "Sample error log")
+
+		require.Panics(t, func() {
+			logger.Panicc(ctx, "Sample panic log")
+		})
+
+		require.Contains(t, stdOut.Buffer.String(), "traceID")
+		require.Contains(t, stdOut.Buffer.String(), "spanID")
+	})
 }
 
 func resetLoggingLevels() {

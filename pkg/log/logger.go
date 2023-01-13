@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package log
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"os"
@@ -137,18 +138,24 @@ func WithEncoding(encoding Encoding) Option {
 	}
 }
 
-// Log uses the Zap Logger to log messages in a structured way.
+// Log uses the Zap Logger to log messages in a structured way. Functions are also included to
+// log context-specific fields, such as OpenTelemetry trace and span IDs.
 type Log struct {
 	*zap.Logger
-	module string
+	ctxLogger *zap.Logger
+	module    string
 }
 
-// New creates a structured Logger implementation based on given module name.
+// New creates a Zap Logger to log messages in a structured way.
 func New(module string, opts ...Option) *Log {
 	options := getOptions(opts)
 
 	return &Log{
-		Logger: newZap(module, options.encoding, options.stdOut, options.stdErr).With(options.fields...),
+		Logger: newZap(module, options.encoding, options.stdOut, options.stdErr).
+			With(options.fields...),
+		ctxLogger: newZap(module, options.encoding, options.stdOut, options.stdErr).
+			WithOptions(zap.AddCallerSkip(1)).
+			With(options.fields...),
 		module: module,
 	}
 }
@@ -156,6 +163,61 @@ func New(module string, opts ...Option) *Log {
 // IsEnabled returns true if given log level is enabled.
 func (l *Log) IsEnabled(level Level) bool {
 	return levels.isEnabled(l.module, level)
+}
+
+// With creates a child logger and adds structured context to it. Fields added
+// to the child don't affect the parent, and vice versa.
+func (l *Log) With(fields ...zap.Field) *Log {
+	if len(fields) == 0 {
+		return l
+	}
+
+	return &Log{
+		Logger:    l.Logger.With(fields...),
+		ctxLogger: l.ctxLogger.With(fields...),
+		module:    l.module,
+	}
+}
+
+// Debugc logs a message at Debug level, including the provided fields and any implicit context
+// fields (such as OpenTelemetry trace ID and span ID).
+func (l *Log) Debugc(ctx context.Context, msg string, fields ...zap.Field) {
+	l.ctxLogger.Debug(msg, append(fields, WithTracing(ctx))...)
+}
+
+// Infoc logs a message at Info level, including the provided fields and any implicit context
+// fields (such as OpenTelemetry trace ID and span ID).
+func (l *Log) Infoc(ctx context.Context, msg string, fields ...zap.Field) {
+	l.ctxLogger.Info(msg, append(fields, WithTracing(ctx))...)
+}
+
+// Warnc logs a message at Warning level, including the provided fields and any implicit context
+// fields (such as OpenTelemetry trace ID and span ID).
+func (l *Log) Warnc(ctx context.Context, msg string, fields ...zap.Field) {
+	l.ctxLogger.Warn(msg, append(fields, WithTracing(ctx))...)
+}
+
+// Errorc logs a message at Error level, including the provided fields and any implicit context
+// fields (such as OpenTelemetry trace ID and span ID).
+func (l *Log) Errorc(ctx context.Context, msg string, fields ...zap.Field) {
+	l.ctxLogger.Error(msg, append(fields, WithTracing(ctx))...)
+}
+
+// Panicc logs a message at Panic level, including the provided fields and any implicit context
+// fields (such as OpenTelemetry trace ID and span ID).
+//
+// The logger then panics, even if logging at PanicLevel is disabled.
+func (l *Log) Panicc(ctx context.Context, msg string, fields ...zap.Field) {
+	l.ctxLogger.Panic(msg, append(fields, WithTracing(ctx))...)
+}
+
+// Fatalc logs a message at Fatal level, including the provided fields and any implicit context
+// fields (such as OpenTelemetry trace ID and span ID).
+//
+// The logger then calls os.Exit(1), even if logging at FatalLevel is
+// disabled.
+func (l *Log) Fatalc(ctx context.Context, msg string, fields ...zap.Field) {
+	l.ctxLogger.Fatal(msg, append(fields, WithTracing(ctx))...)
 }
 
 // SetLevel sets the log level for given module and level.

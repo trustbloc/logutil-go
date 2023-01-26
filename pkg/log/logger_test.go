@@ -44,17 +44,17 @@ func TestLogger(t *testing.T) {
 			logger.Panic("Sample panic log")
 		})
 
-		require.NotContains(t, stdOut.Buffer.String(), "DEBUG")
-		require.Contains(t, stdOut.Buffer.String(), "INFO")
-		require.Contains(t, stdOut.Buffer.String(), "WARN")
-		require.NotContains(t, stdOut.Buffer.String(), "PANIC")
-		require.NotContains(t, stdOut.Buffer.String(), "FATAL")
+		require.NotContains(t, stdOut.Buffer.String(), "debug")
+		require.Contains(t, stdOut.Buffer.String(), "info")
+		require.Contains(t, stdOut.Buffer.String(), "warn")
+		require.NotContains(t, stdOut.Buffer.String(), "panic")
+		require.NotContains(t, stdOut.Buffer.String(), "fatal")
 
-		require.NotContains(t, stdErr.Buffer.String(), "DEBUG")
-		require.NotContains(t, stdErr.Buffer.String(), "INFO")
-		require.NotContains(t, stdErr.Buffer.String(), "WARN")
-		require.Contains(t, stdErr.Buffer.String(), "ERROR")
-		require.Contains(t, stdErr.Buffer.String(), "PANIC")
+		require.NotContains(t, stdErr.Buffer.String(), "debug")
+		require.NotContains(t, stdErr.Buffer.String(), "info")
+		require.NotContains(t, stdErr.Buffer.String(), "warn")
+		require.Contains(t, stdErr.Buffer.String(), "error")
+		require.Contains(t, stdErr.Buffer.String(), "panic")
 	})
 
 	t.Run("DEBUG", func(t *testing.T) {
@@ -74,17 +74,17 @@ func TestLogger(t *testing.T) {
 			logger.Panic("Sample panic log")
 		})
 
-		require.Contains(t, stdOut.Buffer.String(), "DEBUG")
-		require.Contains(t, stdOut.Buffer.String(), "INFO")
-		require.Contains(t, stdOut.Buffer.String(), "WARN")
-		require.NotContains(t, stdOut.Buffer.String(), "PANIC")
+		require.Contains(t, stdOut.Buffer.String(), "debug")
+		require.Contains(t, stdOut.Buffer.String(), "info")
+		require.Contains(t, stdOut.Buffer.String(), "warn")
+		require.NotContains(t, stdOut.Buffer.String(), "panic")
 		require.NotContains(t, stdOut.Buffer.String(), "FATAL")
 
-		require.NotContains(t, stdErr.Buffer.String(), "DEBUG")
-		require.NotContains(t, stdErr.Buffer.String(), "INFO")
-		require.NotContains(t, stdErr.Buffer.String(), "WARN")
-		require.Contains(t, stdErr.Buffer.String(), "ERROR")
-		require.Contains(t, stdErr.Buffer.String(), "PANIC")
+		require.NotContains(t, stdErr.Buffer.String(), "debug")
+		require.NotContains(t, stdErr.Buffer.String(), "info")
+		require.NotContains(t, stdErr.Buffer.String(), "warn")
+		require.Contains(t, stdErr.Buffer.String(), "error")
+		require.Contains(t, stdErr.Buffer.String(), "panic")
 	})
 
 	t.Run("ERROR", func(t *testing.T) {
@@ -106,11 +106,11 @@ func TestLogger(t *testing.T) {
 
 		require.Empty(t, stdOut.Buffer.String())
 
-		require.NotContains(t, stdErr.Buffer.String(), "DEBUG")
-		require.NotContains(t, stdErr.Buffer.String(), "INFO")
-		require.NotContains(t, stdErr.Buffer.String(), "WARN")
-		require.Contains(t, stdErr.Buffer.String(), "ERROR")
-		require.Contains(t, stdErr.Buffer.String(), "PANIC")
+		require.NotContains(t, stdErr.Buffer.String(), "debug")
+		require.NotContains(t, stdErr.Buffer.String(), "info")
+		require.NotContains(t, stdErr.Buffer.String(), "warn")
+		require.Contains(t, stdErr.Buffer.String(), "error")
+		require.Contains(t, stdErr.Buffer.String(), "panic")
 	})
 
 	t.Run("new logger with invalid encoding should panic", func(t *testing.T) {
@@ -178,10 +178,10 @@ func TestLogLevel(t *testing.T) {
 	}
 
 	verifyLevelsNoError(FATAL, "fatal", "FATAL")
-	verifyLevelsNoError(PANIC, "panic", "PANIC")
+	verifyLevelsNoError(PANIC, "panic", "panic")
 	verifyLevelsNoError(ERROR, "error", "ERROR")
-	verifyLevelsNoError(WARNING, "warn", "WARN", "warning", "WARNING")
-	verifyLevelsNoError(DEBUG, "debug", "DEBUG")
+	verifyLevelsNoError(WARNING, "warn", "warn", "warning", "WARNING")
+	verifyLevelsNoError(DEBUG, "debug", "debug")
 	verifyLevelsNoError(INFO, "info", "INFO")
 }
 

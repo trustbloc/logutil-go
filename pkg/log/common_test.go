@@ -22,6 +22,7 @@ func TestCommonLogs(t *testing.T) {
 		logger := New(module,
 			WithStdOut(stdOut),
 			WithFields(WithAddress("some.address")),
+			WithEncoding(Console),
 		)
 
 		CloseIteratorError(logger, errors.New("iterator error"))
@@ -38,6 +39,7 @@ func TestCommonLogs(t *testing.T) {
 		logger := New(module,
 			WithStdOut(stdOut),
 			WithFields(WithAddress("some.address")),
+			WithEncoding(Console),
 		)
 
 		CloseResponseBodyError(logger, errors.New("response body error"))
@@ -54,6 +56,7 @@ func TestCommonLogs(t *testing.T) {
 		logger := New(module,
 			WithStdErr(stdErr),
 			WithFields(WithAddress("some.address")),
+			WithEncoding(Console),
 		)
 
 		WriteResponseBodyError(logger, errors.New("response body error"))
@@ -70,6 +73,7 @@ func TestCommonLogs(t *testing.T) {
 		logger := New(module,
 			WithStdErr(stdErr),
 			WithFields(WithAddress("some.address")),
+			WithEncoding(Console),
 		)
 
 		ReadRequestBodyError(logger, errors.New("request body error"))
@@ -88,6 +92,7 @@ func TestCommonLogs(t *testing.T) {
 		logger := New(module,
 			WithStdOut(stdOut),
 			WithFields(WithAddress("some.address")),
+			WithEncoding(Console),
 		)
 
 		WroteResponse(logger, []byte("some response"))

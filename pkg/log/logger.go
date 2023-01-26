@@ -18,7 +18,7 @@ import (
 )
 
 const (
-	timestampKey  = "time"
+	timestampKey  = "ts"
 	levelKey      = "level"
 	moduleKey     = "logger"
 	callerKey     = "caller"
@@ -28,7 +28,7 @@ const (
 
 // DefaultEncoding sets the default logger encoding.
 // It may be overridden at build time using the -ldflags option.
-var DefaultEncoding = Console //nolint gochecknoglobals
+var DefaultEncoding = JSON //nolint gochecknoglobals
 
 // Level defines a log level for logging messages.
 type Level int

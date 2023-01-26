@@ -23,7 +23,7 @@ func TestStandardFields(t *testing.T) {
 	t.Run("console error", func(t *testing.T) {
 		stdErr := newMockWriter()
 
-		logger := New(module, WithStdErr(stdErr))
+		logger := New(module, WithStdErr(stdErr), WithEncoding(Console))
 
 		logger.Error("Sample error", WithError(errors.New("some error")))
 

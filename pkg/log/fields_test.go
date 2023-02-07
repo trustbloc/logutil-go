@@ -7,6 +7,7 @@ SPDX-License-Identifier: Apache-2.0
 package log
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 //nolint:maintidx
@@ -63,7 +65,17 @@ func TestStandardFields(t *testing.T) {
 		txID := "some tx id"
 		state := "some state"
 
-		logger.Info("Some message",
+		tracer := trace.NewTracerProvider().Tracer("unit-test")
+
+		ctx, span := tracer.Start(context.Background(), "parent-span")
+		ctx2, span2 := tracer.Start(ctx, "child-span")
+
+		cspan, ok := span2.(childSpan)
+		require.True(t, ok)
+
+		parentSpanID := cspan.Parent().SpanID().String()
+
+		logger.Infoc(ctx2, "Some message",
 			WithDuration(duration),
 			WithHTTPStatus(http.StatusNotFound),
 			WithID(id),
@@ -77,9 +89,15 @@ func TestStandardFields(t *testing.T) {
 			WithAddress(address),
 		)
 
+		span2.End()
+		span.End()
+
 		t.Logf(stdOut.String())
 		l := unmarshalLogData(t, stdOut.Bytes())
 
+		require.Equal(t, span2.SpanContext().TraceID().String(), l.TraceID)
+		require.Equal(t, span2.SpanContext().SpanID().String(), l.SpanID)
+		require.Equal(t, parentSpanID, l.ParentSpanID)
 		require.Equal(t, 404, l.HTTPStatus)
 		require.Equal(t, id, l.ID)
 		require.Equal(t, name, l.Name)
@@ -94,11 +112,14 @@ func TestStandardFields(t *testing.T) {
 }
 
 type logData struct {
-	Level  string `json:"level"`
-	Time   string `json:"time"`
-	Logger string `json:"logger"`
-	Caller string `json:"caller"`
-	Error  string `json:"error"`
+	Level        string `json:"level"`
+	Time         string `json:"time"`
+	Logger       string `json:"logger"`
+	Caller       string `json:"caller"`
+	Error        string `json:"error"`
+	TraceID      string `json:"traceID"`
+	SpanID       string `json:"spanID"`
+	ParentSpanID string `json:"parentSpanID"`
 
 	HTTPStatus int    `json:"httpStatus"`
 	ID         string `json:"id"`

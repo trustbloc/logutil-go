@@ -7,43 +7,33 @@ SPDX-License-Identifier: Apache-2.0
 package log
 
 import (
+	"context"
 	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
+
+	"go.opentelemetry.io/otel/trace"
 )
 
 // Log Fields.
 const (
-	FieldAddress    = "address"
-	FieldDuration   = "duration"
-	FieldHTTPStatus = "httpStatus"
-	FieldID         = "id"
-	FieldName       = "name"
-	FieldPath       = "path"
-	FieldResponse   = "response"
-	FieldState      = "state"
-	FieldToken      = "token"
-	FieldTopic      = "topic"
-	FieldTxID       = "txID"
-	FieldURL        = "url"
+	FieldAddress      = "address"
+	FieldDuration     = "duration"
+	FieldHTTPStatus   = "httpStatus"
+	FieldID           = "id"
+	FieldName         = "name"
+	FieldPath         = "path"
+	FieldResponse     = "response"
+	FieldState        = "state"
+	FieldToken        = "token"
+	FieldTopic        = "topic"
+	FieldTxID         = "txID"
+	FieldURL          = "url"
+	FieldTraceID      = "traceID"
+	FieldSpanID       = "spanID"
+	FieldParentSpanID = "parentSpanID"
 )
-
-// ObjectMarshaller uses reflection to marshal an object's fields.
-type ObjectMarshaller struct {
-	key string
-	obj interface{}
-}
-
-// NewObjectMarshaller returns a new ObjectMarshaller.
-func NewObjectMarshaller(key string, obj interface{}) *ObjectMarshaller {
-	return &ObjectMarshaller{key: key, obj: obj}
-}
-
-// MarshalLogObject marshals the object's fields.
-func (m *ObjectMarshaller) MarshalLogObject(e zapcore.ObjectEncoder) error {
-	return e.AddReflected(m.key, m.obj)
-}
 
 // WithError sets the error field.
 func WithError(err error) zap.Field {
@@ -108,4 +98,51 @@ func WithState(state string) zap.Field {
 // WithAddress sets the address field.
 func WithAddress(address string) zap.Field {
 	return zap.String(FieldAddress, address)
+}
+
+// WithTracing adds OpenTelemetry fields, i.e. traceID, spanID, and (optionally) parentSpanID fields.
+// If the provided context doesn't contain OpenTelemetry data then the fields are not logged.
+func WithTracing(ctx context.Context) zap.Field {
+	return zap.Inline(&otelMarshaller{ctx: ctx})
+}
+
+// otelMarshaller is an OpenTelemetry marshaller which adds Open-Telemetry
+// trace and span IDs (as well as parent span ID if exists) to the log message.
+type otelMarshaller struct {
+	ctx context.Context
+}
+
+type childSpan interface {
+	Parent() trace.SpanContext
+}
+
+const (
+	nilTraceID = "00000000000000000000000000000000"
+	nilSpanID  = "0000000000000000"
+)
+
+func (m *otelMarshaller) MarshalLogObject(e zapcore.ObjectEncoder) error {
+	s := trace.SpanFromContext(m.ctx)
+
+	traceID := s.SpanContext().TraceID().String()
+	if traceID == "" || traceID == nilTraceID {
+		return nil
+	}
+
+	e.AddString(FieldTraceID, traceID)
+
+	spanID := s.SpanContext().SpanID().String()
+	if spanID != "" && spanID != nilSpanID {
+		e.AddString(FieldSpanID, spanID)
+	}
+
+	cspan, ok := s.(childSpan)
+	if ok {
+		parentSpanID := cspan.Parent().SpanID().String()
+		if parentSpanID != "" && parentSpanID != nilSpanID {
+			e.AddString(FieldParentSpanID, parentSpanID)
+		}
+	}
+
+	return nil
 }

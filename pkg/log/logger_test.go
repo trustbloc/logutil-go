@@ -351,20 +351,24 @@ func TestContextLogger(t *testing.T) {
 
 		logger := New(module, WithStdOut(stdOut), WithStdErr(stdErr))
 
-		ctx, span := tracer.Start(context.Background(), "parent-span")
-		defer span.End()
+		ctx1, span1 := tracer.Start(context.Background(), "span1")
+		defer span1.End()
 
-		logger.Debugc(ctx, "Sample debug log")
-		logger.Infoc(ctx, "Sample info log")
-		logger.Warnc(ctx, "Sample warn log")
-		logger.Errorc(ctx, "Sample error log")
+		ctx2, span2 := tracer.Start(ctx1, "span2")
+		defer span2.End()
+
+		logger.Debugc(ctx2, "Sample debug log")
+		logger.Infoc(ctx2, "Sample info log")
+		logger.Warnc(ctx2, "Sample warn log")
+		logger.Errorc(ctx2, "Sample error log")
 
 		require.Panics(t, func() {
-			logger.Panicc(ctx, "Sample panic log")
+			logger.Panicc(ctx2, "Sample panic log")
 		})
 
-		require.Contains(t, stdOut.Buffer.String(), "traceID")
-		require.Contains(t, stdOut.Buffer.String(), "spanID")
+		require.Contains(t, stdOut.Buffer.String(), "trace_id")
+		require.Contains(t, stdOut.Buffer.String(), "span_id")
+		require.Contains(t, stdOut.Buffer.String(), "parent_span_id")
 	})
 }
 

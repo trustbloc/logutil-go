@@ -117,9 +117,9 @@ type logData struct {
 	Logger       string `json:"logger"`
 	Caller       string `json:"caller"`
 	Error        string `json:"error"`
-	TraceID      string `json:"traceID"`
-	SpanID       string `json:"spanID"`
-	ParentSpanID string `json:"parentSpanID"`
+	TraceID      string `json:"trace_id"`
+	SpanID       string `json:"span_id"`
+	ParentSpanID string `json:"parent_span_id"`
 
 	HTTPStatus int    `json:"httpStatus"`
 	ID         string `json:"id"`

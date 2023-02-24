@@ -30,9 +30,9 @@ const (
 	FieldTopic        = "topic"
 	FieldTxID         = "txID"
 	FieldURL          = "url"
-	FieldTraceID      = "traceID"
-	FieldSpanID       = "spanID"
-	FieldParentSpanID = "parentSpanID"
+	FieldTraceID      = "trace_id"
+	FieldSpanID       = "span_id"
+	FieldParentSpanID = "parent_span_id"
 )
 
 // WithError sets the error field.

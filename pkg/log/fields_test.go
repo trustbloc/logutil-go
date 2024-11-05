@@ -92,7 +92,6 @@ func TestStandardFields(t *testing.T) {
 		span2.End()
 		span.End()
 
-		t.Logf(stdOut.String())
 		l := unmarshalLogData(t, stdOut.Bytes())
 
 		require.Equal(t, span2.SpanContext().TraceID().String(), l.TraceID)

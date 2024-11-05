@@ -17,6 +17,7 @@ import (
 
 	"go.opentelemetry.io/otel/trace"
 
+	"github.com/trustbloc/logutil-go/pkg/log"
 	"github.com/trustbloc/logutil-go/pkg/otel/api"
 )
 
@@ -24,6 +25,8 @@ const (
 	nilTraceID          = "00000000000000000000000000000000"
 	correlationIDLength = 8
 )
+
+var logger = log.New("correlationid")
 
 type contextKey struct{}
 
@@ -35,12 +38,16 @@ func Set(ctx context.Context) (context.Context, string, error) {
 	traceID := trace.SpanFromContext(ctx).SpanContext().TraceID().String()
 	if traceID != "" && traceID != nilTraceID {
 		correlationID = deriveID(traceID)
+
+		logger.Debugc(ctx, "Derived correlation ID from trace ID", log.WithCorrelationID(correlationID))
 	} else {
 		var err error
 		correlationID, err = generateID()
 		if err != nil {
 			return nil, "", fmt.Errorf("generate correlation ID: %w", err)
 		}
+
+		logger.Debug("Generated correlation ID", log.WithCorrelationID(correlationID))
 	}
 
 	return context.WithValue(ctx, contextKey{}, correlationID), correlationID, nil

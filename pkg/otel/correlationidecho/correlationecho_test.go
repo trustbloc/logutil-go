@@ -7,12 +7,15 @@ SPDX-License-Identifier: Apache-2.0
 package correlationidecho
 
 import (
+	"context"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
+	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/sdk/trace"
 )
 
 func TestMiddleware(t *testing.T) {
@@ -20,19 +23,22 @@ func TestMiddleware(t *testing.T) {
 
 	m := Middleware()
 
-	handler := m(func(c echo.Context) error {
+	handler := m(func(echo.Context) error {
 		return nil
 	})
 	require.NotNil(t, handler)
 
-	e := echo.New()
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	otel.SetTracerProvider(trace.NewTracerProvider())
+
+	ctx, span := otel.GetTracerProvider().Tracer("test").Start(context.Background(), "test")
+	defer span.End()
+
+	req := httptest.NewRequestWithContext(ctx, http.MethodGet, "/", nil)
 	req.Header.Set("X-Correlation-Id", correlationID1)
 
 	rec := httptest.NewRecorder()
 
-	ctx := e.NewContext(req, rec)
+	ectx := echo.New().NewContext(req, rec)
 
-	err := handler(ctx)
-	require.NoError(t, err)
+	require.NoError(t, handler(ectx))
 }

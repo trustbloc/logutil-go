@@ -18,21 +18,22 @@ import (
 
 // Log Fields.
 const (
-	FieldAddress      = "address"
-	FieldDuration     = "duration"
-	FieldHTTPStatus   = "httpStatus"
-	FieldID           = "id"
-	FieldName         = "name"
-	FieldPath         = "path"
-	FieldResponse     = "response"
-	FieldState        = "state"
-	FieldToken        = "token"
-	FieldTopic        = "topic"
-	FieldTxID         = "txID"
-	FieldURL          = "url"
-	FieldTraceID      = "trace_id"
-	FieldSpanID       = "span_id"
-	FieldParentSpanID = "parent_span_id"
+	FieldAddress       = "address"
+	FieldDuration      = "duration"
+	FieldHTTPStatus    = "httpStatus"
+	FieldID            = "id"
+	FieldName          = "name"
+	FieldPath          = "path"
+	FieldResponse      = "response"
+	FieldState         = "state"
+	FieldToken         = "token"
+	FieldTopic         = "topic"
+	FieldTxID          = "txID"
+	FieldURL           = "url"
+	FieldTraceID       = "trace_id"
+	FieldSpanID        = "span_id"
+	FieldParentSpanID  = "parent_span_id"
+	FieldCorrelationID = "correlation_id"
 )
 
 // WithError sets the error field.
@@ -104,6 +105,11 @@ func WithAddress(address string) zap.Field {
 // If the provided context doesn't contain OpenTelemetry data then the fields are not logged.
 func WithTracing(ctx context.Context) zap.Field {
 	return zap.Inline(&otelMarshaller{ctx: ctx})
+}
+
+// WithCorrelationID sets the correlation_id field.
+func WithCorrelationID(value string) zap.Field {
+	return zap.String(FieldCorrelationID, value)
 }
 
 // otelMarshaller is an OpenTelemetry marshaller which adds Open-Telemetry

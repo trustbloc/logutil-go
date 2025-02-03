@@ -12,13 +12,12 @@ import (
 	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
-	"net/http"
 	"strings"
-
-	"go.opentelemetry.io/otel/trace"
 
 	"github.com/trustbloc/logutil-go/pkg/log"
 	"github.com/trustbloc/logutil-go/pkg/otel/api"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/trace"
 )
 
 const (
@@ -28,12 +27,19 @@ const (
 
 var logger = log.New("correlationid")
 
-type contextKey struct{}
-
 // Set derives the correlation ID from the OpenTelemetry trace ID and sets it on the returned context.
 // If no trace ID is available, a random correlation ID is generated.
 func Set(ctx context.Context) (context.Context, string, error) {
 	var correlationID string
+
+	b := baggage.FromContext(ctx)
+
+	m := b.Member(api.CorrelationIDHeader)
+	if m.Value() != "" {
+		correlationID = m.Value()
+
+		return ctx, correlationID, nil
+	}
 
 	traceID := trace.SpanFromContext(ctx).SpanContext().TraceID().String()
 	if traceID != "" && traceID != nilTraceID {
@@ -50,30 +56,34 @@ func Set(ctx context.Context) (context.Context, string, error) {
 		logger.Debug("Generated correlation ID", log.WithCorrelationID(correlationID))
 	}
 
-	return context.WithValue(ctx, contextKey{}, correlationID), correlationID, nil
+	ctx, err := SetWithValue(ctx, correlationID)
+	return ctx, correlationID, err
 }
 
-// Transport is an HTTP RoundTripper that adds a correlation ID to the request header.
-type Transport struct {
-	defaultTransport http.RoundTripper
-}
+// SetWithValue sets the correlation ID on the returned context.
+func SetWithValue(ctx context.Context, correlationID string) (context.Context, error) {
+	b := baggage.FromContext(ctx)
 
-// NewHTTPTransport creates a new HTTP Transport.
-func NewHTTPTransport(defaultTransport http.RoundTripper) *Transport {
-	return &Transport{
-		defaultTransport: defaultTransport,
-	}
-}
+	m := b.Member(api.CorrelationIDHeader)
+	if m.Value() == correlationID {
+		logger.Infoc(ctx, "Found correlation ID in baggage")
 
-// RoundTrip executes a single HTTP transaction.
-func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
-	correlationID, ok := req.Context().Value(contextKey{}).(string)
-	if ok {
-		req = req.Clone(req.Context())
-		req.Header.Add(api.CorrelationIDHeader, correlationID)
+		return ctx, nil
 	}
 
-	return t.defaultTransport.RoundTrip(req)
+	logger.Infoc(ctx, "Setting correlation ID in baggage", log.WithCorrelationID(correlationID))
+
+	m, err := baggage.NewMember(api.CorrelationIDHeader, correlationID)
+	if err != nil {
+		return nil, fmt.Errorf("create baggage member: %w", err)
+	}
+
+	b, err = baggage.New(m)
+	if err != nil {
+		return nil, fmt.Errorf("create baggage: %w", err)
+	}
+
+	return baggage.ContextWithBaggage(ctx, b), nil
 }
 
 func generateID() (string, error) {

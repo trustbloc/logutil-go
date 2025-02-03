@@ -8,11 +8,11 @@ package correlationidecho
 
 import (
 	"github.com/labstack/echo/v4"
-	"go.opentelemetry.io/otel/attribute"
-	"go.opentelemetry.io/otel/trace"
-
 	"github.com/trustbloc/logutil-go/pkg/log"
 	"github.com/trustbloc/logutil-go/pkg/otel/api"
+	"github.com/trustbloc/logutil-go/pkg/otel/correlationid"
+	"go.opentelemetry.io/otel/attribute"
+	"go.opentelemetry.io/otel/trace"
 )
 
 var logger = log.New("correlationid-echo")
@@ -22,14 +22,37 @@ var logger = log.New("correlationid-echo")
 func Middleware() echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			if correlationID := c.Request().Header.Get(api.CorrelationIDHeader); correlationID != "" {
-				ctx := c.Request().Context()
+			req := c.Request()
 
-				span := trace.SpanFromContext(ctx)
-				span.SetAttributes(attribute.String(api.CorrelationIDAttribute, correlationID))
+			defer func() {
+				c.SetRequest(req)
+			}()
 
-				logger.Infoc(ctx, "Received HTTP request", log.WithCorrelationID(correlationID))
+			ctx := req.Context()
+
+			correlationID := c.Request().Header.Get(api.CorrelationIDHeader)
+			if correlationID != "" {
+				logger.Debugc(ctx, "Received HTTP request with correlation ID in header", log.WithCorrelationID(correlationID))
+
+				var err error
+				ctx, err = correlationid.SetWithValue(ctx, correlationID)
+				if err != nil {
+					return err
+				}
+			} else {
+				var err error
+				ctx, correlationID, err = correlationid.Set(ctx)
+				if err != nil {
+					return err
+				}
+
+				logger.Debugc(ctx, "Generated new correlation ID since none was found in the HTTP header")
 			}
+
+			span := trace.SpanFromContext(ctx)
+			span.SetAttributes(attribute.String(api.CorrelationIDAttribute, correlationID))
+
+			c.SetRequest(req.WithContext(ctx))
 
 			return next(c)
 		}

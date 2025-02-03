@@ -10,10 +10,11 @@ import (
 	"context"
 	"time"
 
+	"github.com/trustbloc/logutil-go/pkg/otel/api"
+	"go.opentelemetry.io/otel/baggage"
+	"go.opentelemetry.io/otel/trace"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-
-	"go.opentelemetry.io/otel/trace"
 )
 
 // Log Fields.
@@ -148,6 +149,11 @@ func (m *otelMarshaller) MarshalLogObject(e zapcore.ObjectEncoder) error {
 		if parentSpanID != "" && parentSpanID != nilSpanID {
 			e.AddString(FieldParentSpanID, parentSpanID)
 		}
+	}
+
+	member := baggage.FromContext(m.ctx).Member(api.CorrelationIDHeader)
+	if member.Value() != "" {
+		e.AddString(FieldCorrelationID, member.Value())
 	}
 
 	return nil

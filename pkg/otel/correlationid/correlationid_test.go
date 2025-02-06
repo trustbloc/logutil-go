@@ -8,49 +8,46 @@ package correlationid
 
 import (
 	"context"
-	"net/http"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 	"go.opentelemetry.io/otel"
+	"go.opentelemetry.io/otel/baggage"
 	"go.opentelemetry.io/otel/sdk/trace"
 
 	"github.com/trustbloc/logutil-go/pkg/otel/api"
 )
 
-func TestTransport_RoundTrip(t *testing.T) {
-	t.Run("No span", func(t *testing.T) {
-		var rt mockRoundTripperFunc = func(req *http.Request) (*http.Response, error) {
-			require.Len(t, req.Header.Get(api.CorrelationIDHeader), 8)
-
-			return &http.Response{}, nil
-		}
-
-		transport := NewHTTPTransport(rt)
-
+func TestSet(t *testing.T) {
+	t.Run("No trace ID", func(t *testing.T) {
 		ctx, correlationID, err := Set(context.Background())
 		require.NoError(t, err)
 		require.NotEmpty(t, correlationID)
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://example.com", nil)
-		require.NoError(t, err)
+		b := baggage.FromContext(ctx)
+		m := b.Member(api.CorrelationIDHeader)
+		require.Equal(t, correlationID, m.Value())
 
-		resp, err := transport.RoundTrip(req)
-		require.NoError(t, err)
-		require.NotNil(t, resp)
+		t.Run("With existing correlation ID", func(t *testing.T) {
+			ctx2, correlationID2, err := Set(ctx)
+			require.NoError(t, err)
+			require.Equal(t, ctx, ctx2)
+			require.Equal(t, correlationID, correlationID2)
+		})
+
+		t.Run("Nested contexts", func(t *testing.T) {
+			type key struct{}
+
+			ctx2, cancel := context.WithCancel(context.WithValue(ctx, key{}, "test"))
+			defer cancel()
+
+			b := baggage.FromContext(ctx2)
+			m := b.Member(api.CorrelationIDHeader)
+			require.Equal(t, correlationID, m.Value())
+		})
 	})
 
-	t.Run("With span", func(t *testing.T) {
-		var correlationID string
-
-		var rt mockRoundTripperFunc = func(req *http.Request) (*http.Response, error) {
-			require.Equal(t, correlationID, req.Header.Get(api.CorrelationIDHeader))
-
-			return &http.Response{}, nil
-		}
-
-		transport := NewHTTPTransport(rt)
-
+	t.Run("With trace ID", func(t *testing.T) {
 		tp := trace.NewTracerProvider()
 
 		otel.SetTracerProvider(tp)
@@ -58,21 +55,27 @@ func TestTransport_RoundTrip(t *testing.T) {
 		ctx, span := tp.Tracer("test").Start(context.Background(), "test")
 		require.NotNil(t, span)
 
-		var err error
-		ctx, correlationID, err = Set(ctx)
+		ctx, correlationID, err := Set(ctx)
 		require.NoError(t, err)
+		require.NotEmpty(t, correlationID)
 
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://example.com", nil)
-		require.NoError(t, err)
-
-		resp, err := transport.RoundTrip(req)
-		require.NoError(t, err)
-		require.NotNil(t, resp)
+		b := baggage.FromContext(ctx)
+		m := b.Member(api.CorrelationIDHeader)
+		require.Equal(t, correlationID, m.Value())
 	})
 }
 
-type mockRoundTripperFunc func(*http.Request) (*http.Response, error)
+func TestSetWithValue(t *testing.T) {
+	ctx := context.Background()
 
-func (fn mockRoundTripperFunc) RoundTrip(req *http.Request) (*http.Response, error) {
-	return fn(req)
+	ctx2, err := SetWithValue(ctx, "id1")
+	require.NoError(t, err)
+
+	b := baggage.FromContext(ctx2)
+	m := b.Member(api.CorrelationIDHeader)
+	require.Equal(t, "id1", m.Value())
+
+	ctx3, err := SetWithValue(ctx2, "id1")
+	require.NoError(t, err)
+	require.Equal(t, ctx2, ctx3)
 }

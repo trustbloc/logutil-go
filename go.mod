@@ -9,6 +9,7 @@ go 1.22.0
 toolchain go1.23.2
 
 require (
+	github.com/gorilla/mux v1.8.1
 	github.com/labstack/echo/v4 v4.12.0
 	github.com/stretchr/testify v1.10.0
 	go.opentelemetry.io/otel v1.34.0

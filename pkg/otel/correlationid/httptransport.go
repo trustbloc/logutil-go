@@ -9,8 +9,10 @@ package correlationid
 import (
 	"net/http"
 
-	"github.com/trustbloc/logutil-go/pkg/otel/api"
 	"go.opentelemetry.io/otel/baggage"
+
+	"github.com/trustbloc/logutil-go/pkg/log"
+	"github.com/trustbloc/logutil-go/pkg/otel/api"
 )
 
 // Transport is an HTTP RoundTripper that adds a correlation ID to the request header.
@@ -33,7 +35,7 @@ func (t *Transport) RoundTrip(req *http.Request) (*http.Response, error) {
 
 	m := b.Member(api.CorrelationIDHeader)
 	if m.Value() != "" {
-		logger.Infoc(ctx, "Found correlation ID in baggage")
+		logger.Debugc(ctx, "Found correlation ID in baggage", log.WithCorrelationID(m.Value()))
 
 		req = req.Clone(ctx)
 		req.Header.Add(api.CorrelationIDHeader, m.Value())

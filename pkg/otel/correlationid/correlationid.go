@@ -66,12 +66,12 @@ func SetWithValue(ctx context.Context, correlationID string) (context.Context, e
 
 	m := b.Member(api.CorrelationIDHeader)
 	if m.Value() == correlationID {
-		logger.Infoc(ctx, "Found correlation ID in baggage")
+		logger.Debugc(ctx, "Found correlation ID in baggage")
 
 		return ctx, nil
 	}
 
-	logger.Infoc(ctx, "Setting correlation ID in baggage", log.WithCorrelationID(correlationID))
+	logger.Debugc(ctx, "Setting correlation ID in baggage", log.WithCorrelationID(correlationID))
 
 	m, err := baggage.NewMember(api.CorrelationIDHeader, correlationID)
 	if err != nil {

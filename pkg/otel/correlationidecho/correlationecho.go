@@ -30,6 +30,7 @@ type Opt func(*options)
 func GenerateUUIDIfNotFound() Opt {
 	return func(o *options) {
 		o.generateUUID = true
+		o.generateFixedLengthID = false
 	}
 }
 
@@ -39,6 +40,7 @@ func GenerateNewFixedLengthIfNotFound(length int) Opt {
 	return func(o *options) {
 		o.generateFixedLengthID = true
 		o.correlationIDLength = length
+		o.generateUUID = false
 	}
 }
 

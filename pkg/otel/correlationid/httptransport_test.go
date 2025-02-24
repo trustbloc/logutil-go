@@ -27,7 +27,7 @@ func TestTransport_RoundTrip(t *testing.T) {
 
 		transport := NewHTTPTransport(rt)
 
-		ctx, correlationID, err := Set(context.Background())
+		ctx, correlationID, err := FromContext(context.Background(), GenerateNewFixedLengthIfNotFound(8))
 		require.NoError(t, err)
 		require.NotEmpty(t, correlationID)
 
@@ -58,10 +58,10 @@ func TestTransport_RoundTrip(t *testing.T) {
 		require.NotNil(t, span)
 
 		var err error
-		ctx, correlationID, err = Set(ctx)
+		ctx, correlationID, err = FromContext(ctx)
 		require.NoError(t, err)
 
-		ctx, correlationID, err = Set(ctx)
+		ctx, correlationID, err = FromContext(ctx)
 		require.NoError(t, err)
 
 		req, err := http.NewRequestWithContext(ctx, http.MethodGet, "http://example.com", nil)

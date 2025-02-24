@@ -17,9 +17,42 @@ import (
 
 var logger = log.New("correlationid-echo")
 
+type options struct {
+	generateFixedLengthID bool
+	generateUUID          bool
+	correlationIDLength   int
+}
+
+// Opt is an option for the FromContext function.
+type Opt func(*options)
+
+// GenerateUUIDIfNotFound configures the FromContext function to generate a UUID as the correlation ID.
+func GenerateUUIDIfNotFound() Opt {
+	return func(o *options) {
+		o.generateUUID = true
+	}
+}
+
+// GenerateNewFixedLengthIfNotFound configures the FromContext function to generate
+// a new correlation ID if none is found in the context.
+func GenerateNewFixedLengthIfNotFound(length int) Opt {
+	return func(o *options) {
+		o.generateFixedLengthID = true
+		o.correlationIDLength = length
+	}
+}
+
 // Middleware reads the X-Correlation-Id header and, if found, sets the
 // dts.correlation_id attribute on the current span.
-func Middleware() echo.MiddlewareFunc {
+func Middleware(opts ...Opt) echo.MiddlewareFunc {
+	options := &options{
+		generateUUID: true,
+	}
+
+	for _, opt := range opts {
+		opt(options)
+	}
+
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			req := c.Request()
@@ -35,13 +68,13 @@ func Middleware() echo.MiddlewareFunc {
 				logger.Debugc(ctx, "Received HTTP request with correlation ID in header", log.WithCorrelationID(correlationID))
 
 				var err error
-				ctx, err = correlationid.SetWithValue(ctx, correlationID)
+				ctx, _, err = correlationid.FromContext(ctx, correlationid.WithValue(correlationID))
 				if err != nil {
 					return err
 				}
 			} else {
 				var err error
-				ctx, correlationID, err = correlationid.Set(ctx)
+				ctx, correlationID, err = correlationid.FromContext(ctx, getOptions(options)...)
 				if err != nil {
 					return err
 				}
@@ -57,4 +90,18 @@ func Middleware() echo.MiddlewareFunc {
 			return next(c)
 		}
 	}
+}
+
+func getOptions(opts *options) []correlationid.Opt {
+	var copts []correlationid.Opt
+
+	if opts.generateFixedLengthID {
+		copts = append(copts, correlationid.GenerateNewFixedLengthIfNotFound(opts.correlationIDLength))
+	}
+
+	if opts.generateUUID {
+		copts = append(copts, correlationid.GenerateUUIDIfNotFound())
+	}
+
+	return copts
 }

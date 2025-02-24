@@ -9,95 +9,117 @@ package correlationid
 import (
 	"context"
 	"crypto/rand"
-	"crypto/sha256"
 	"encoding/hex"
 	"fmt"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/trustbloc/logutil-go/pkg/log"
 	"github.com/trustbloc/logutil-go/pkg/otel/api"
 	"go.opentelemetry.io/otel/baggage"
-	"go.opentelemetry.io/otel/trace"
-)
-
-const (
-	nilTraceID          = "00000000000000000000000000000000"
-	correlationIDLength = 8
 )
 
 var logger = log.New("correlationid")
 
-// Set derives the correlation ID from the OpenTelemetry trace ID and sets it on the returned context.
-// If no trace ID is available, a random correlation ID is generated.
-func Set(ctx context.Context) (context.Context, string, error) {
-	var correlationID string
+type options struct {
+	generateFixedLengthID bool
+	generateUUID          bool
+	value                 string
+	correlationIDLength   int
+}
+
+// Opt is an option for the FromContext function.
+type Opt func(*options)
+
+// GenerateUUIDIfNotFound configures the FromContext function to generate a UUID as the correlation ID.
+func GenerateUUIDIfNotFound() Opt {
+	return func(o *options) {
+		o.generateUUID = true
+	}
+}
+
+// GenerateNewFixedLengthIfNotFound configures the FromContext function to generate a new
+// correlation ID if none is found in the context.
+func GenerateNewFixedLengthIfNotFound(length int) Opt {
+	return func(o *options) {
+		o.generateFixedLengthID = true
+		o.correlationIDLength = length
+	}
+}
+
+// WithValue configures the FromContext function to use the provided correlation ID.
+func WithValue(correlationID string) Opt {
+	return func(o *options) {
+		o.value = correlationID
+	}
+}
+
+// FromContext returns the correlation ID from the given context. If a correlation ID is not found
+// in the context then:
+//   - If GenerateUUIDIfNotFound option is set, a new UUID is generated and set on the returned context.
+//   - If GenerateNewFixedLengthIfNotFound option is set, a new fixed-length correlation ID
+//     is generated and set on the returned context.
+//   - If WithValue is set then the given correlation ID is set on the returned context.
+//   - If none of the above options is specified then the existing context and empty string are returned.
+func FromContext(ctx context.Context, opts ...Opt) (context.Context, string, error) {
+	options := &options{}
+
+	for _, opt := range opts {
+		opt(options)
+	}
 
 	b := baggage.FromContext(ctx)
 
 	m := b.Member(api.CorrelationIDHeader)
 	if m.Value() != "" {
-		correlationID = m.Value()
+		if options.value == "" || m.Value() == options.value {
+			logger.Debugc(ctx, "Found correlation ID in baggage")
 
-		return ctx, correlationID, nil
+			return ctx, m.Value(), nil
+		}
 	}
 
-	traceID := trace.SpanFromContext(ctx).SpanContext().TraceID().String()
-	if traceID != "" && traceID != nilTraceID {
-		correlationID = deriveID(traceID)
+	if !options.generateFixedLengthID && !options.generateUUID && options.value == "" {
+		return ctx, "", nil
+	}
 
-		logger.Debugc(ctx, "Derived correlation ID from trace ID", log.WithCorrelationID(correlationID))
-	} else {
+	correlationID := options.value
+
+	if correlationID == "" {
 		var err error
-		correlationID, err = generateID()
+		correlationID, err = generateID(options)
 		if err != nil {
 			return nil, "", fmt.Errorf("generate correlation ID: %w", err)
 		}
 
 		logger.Debug("Generated correlation ID", log.WithCorrelationID(correlationID))
+	} else {
+		logger.Debug("Using correlation ID from options", log.WithCorrelationID(correlationID))
 	}
-
-	ctx, err := SetWithValue(ctx, correlationID)
-	return ctx, correlationID, err
-}
-
-// SetWithValue sets the correlation ID on the returned context.
-func SetWithValue(ctx context.Context, correlationID string) (context.Context, error) {
-	b := baggage.FromContext(ctx)
-
-	m := b.Member(api.CorrelationIDHeader)
-	if m.Value() == correlationID {
-		logger.Debugc(ctx, "Found correlation ID in baggage")
-
-		return ctx, nil
-	}
-
-	logger.Debugc(ctx, "Setting correlation ID in baggage", log.WithCorrelationID(correlationID))
 
 	m, err := baggage.NewMember(api.CorrelationIDHeader, correlationID)
 	if err != nil {
-		return nil, fmt.Errorf("create baggage member: %w", err)
+		return nil, "", fmt.Errorf("create baggage member: %w", err)
 	}
 
 	b, err = baggage.New(m)
 	if err != nil {
-		return nil, fmt.Errorf("create baggage: %w", err)
+		return nil, "", fmt.Errorf("create baggage: %w", err)
 	}
 
-	return baggage.ContextWithBaggage(ctx, b), nil
+	return baggage.ContextWithBaggage(ctx, b), correlationID, nil
 }
 
-func generateID() (string, error) {
-	bytes := make([]byte, correlationIDLength/2) //nolint:gomnd
+func generateID(options *options) (string, error) {
+	if options.generateUUID {
+		return uuid.NewString(), nil
+	}
+
+	bytes := make([]byte, options.correlationIDLength/2) //nolint:gomnd
 
 	if _, err := rand.Read(bytes); err != nil {
 		return "", err
 	}
 
 	return strings.ToUpper(hex.EncodeToString(bytes)), nil
-}
-
-func deriveID(id string) string {
-	hash := sha256.Sum256([]byte(id))
-
-	return strings.ToUpper(hex.EncodeToString(hash[:correlationIDLength/2])) //nolint:gomnd
 }

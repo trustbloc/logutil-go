@@ -391,3 +391,59 @@ func verifyLevels(t *testing.T, module string, enabled, disabled []Level) {
 			"expected level [%s] to be disabled for module [%s]", level, module)
 	}
 }
+
+func TestLoggerSkip(t *testing.T) {
+	tracer := trace.NewTracerProvider().Tracer("unit-test")
+
+	const module = "test-logger-skip"
+
+	SetLevel(module, DEBUG)
+
+	t.Run("Test Default Logger Skip", func(t *testing.T) {
+		stdOut := newMockWriter()
+		stdErr := newMockWriter()
+
+		// don't set logger skip, should be default 1
+		logger := New(module, WithStdOut(stdOut), WithStdErr(stdErr))
+
+		ctx, span := tracer.Start(context.Background(), "span1")
+		defer span.End()
+
+		logger.Debugc(ctx, "Sample debug log")
+		logger.Infoc(ctx, "Sample info log")
+		logger.Warnc(ctx, "Sample warn log")
+		logger.Errorc(ctx, "Sample error log")
+
+		require.Panics(t, func() {
+			logger.Panicc(ctx, "Sample panic log")
+		})
+
+		// caller should be in logger_test with default skip 1
+		require.Contains(t, stdOut.Buffer.String(), "log/logger_test.go:")
+		require.Contains(t, stdErr.Buffer.String(), "log/logger_test.go:")
+	})
+
+	t.Run("Test Set Logger Skip", func(t *testing.T) {
+		stdOut := newMockWriter()
+		stdErr := newMockWriter()
+
+		// set logger skip to 0
+		logger := New(module, WithStdOut(stdOut), WithStdErr(stdErr), WithCallerSkip(0))
+
+		ctx, span := tracer.Start(context.Background(), "span1")
+		defer span.End()
+
+		logger.Debugc(ctx, "Sample debug log")
+		logger.Infoc(ctx, "Sample info log")
+		logger.Warnc(ctx, "Sample warn log")
+		logger.Errorc(ctx, "Sample error log")
+
+		require.Panics(t, func() {
+			logger.Panicc(ctx, "Sample panic log")
+		})
+
+		// caller should be in log/logger.go with default skip 0
+		require.Contains(t, stdOut.Buffer.String(), "log/logger.go:")
+		require.Contains(t, stdErr.Buffer.String(), "log/logger.go:")
+	})
+}

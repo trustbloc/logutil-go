@@ -90,10 +90,11 @@ const (
 var levels = newModuleLevels() //nolint: gochecknoglobals
 
 type options struct {
-	encoding Encoding
-	stdOut   zapcore.WriteSyncer
-	stdErr   zapcore.WriteSyncer
-	fields   []zap.Field
+	encoding   Encoding
+	stdOut     zapcore.WriteSyncer
+	stdErr     zapcore.WriteSyncer
+	fields     []zap.Field
+	callerSkip int
 }
 
 // Encoding defines the log encoding.
@@ -138,6 +139,13 @@ func WithEncoding(encoding Encoding) Option {
 	}
 }
 
+// WithCallerSkip sets the caller skip for ctx logger.
+func WithCallerSkip(callerSkip int) Option {
+	return func(o *options) {
+		o.callerSkip = callerSkip
+	}
+}
+
 // Log uses the Zap Logger to log messages in a structured way. Functions are also included to
 // log context-specific fields, such as OpenTelemetry trace and span IDs.
 type Log struct {
@@ -154,7 +162,7 @@ func New(module string, opts ...Option) *Log {
 		Logger: newZap(module, options.encoding, options.stdOut, options.stdErr).
 			With(options.fields...),
 		ctxLogger: newZap(module, options.encoding, options.stdOut, options.stdErr).
-			WithOptions(zap.AddCallerSkip(1)).
+			WithOptions(zap.AddCallerSkip(options.callerSkip)).
 			With(options.fields...),
 		module: module,
 	}
@@ -443,9 +451,10 @@ func newZapEncoder(encoding Encoding) zapcore.Encoder {
 
 func getOptions(opts []Option) *options {
 	options := &options{
-		encoding: DefaultEncoding,
-		stdOut:   os.Stdout,
-		stdErr:   os.Stderr,
+		encoding:   DefaultEncoding,
+		stdOut:     os.Stdout,
+		stdErr:     os.Stderr,
+		callerSkip: 1,
 	}
 
 	for _, opt := range opts {

@@ -1,3 +1,4 @@
+version: 2
 #
 # Copyright SecureKey Technologies Inc. All Rights Reserved.
 #
@@ -12,7 +13,7 @@ run:
   # Define the Go version limit.
   # Mainly related to generics support in go1.18.
   # Default: use Go version from the go.mod file, fallback on the env var `GOVERSION`, fallback on 1.19
-  go: "1.23"
+  go: "1.25"
 
 
 # All possible options can be found here: https://github.com/golangci/golangci-lint/blob/master/.golangci.reference.yml
@@ -184,7 +185,7 @@ linters:
     - gocyclo # Computes and checks the cyclomatic complexity of functions
     - godot # Check if comments end in a period
     - goimports # In addition to fixing imports, goimports also formats your code in the same style as gofmt.
-    - gomnd # An analyzer to detect magic numbers.
+    - mnd # An analyzer to detect magic numbers.
     - gomodguard # Allow and block list linter for direct Go module dependencies. This is different from depguard where there are different block types for example version constraints and module recommendations.
     - goprintffuncname # Checks that printf-like functions are named with f at the end
     - gosec # Inspects source code for security problems
@@ -203,7 +204,6 @@ linters:
     - revive # Fast, configurable, extensible, flexible, and beautiful linter for Go. Drop-in replacement of golint.
     - rowserrcheck # checks whether Err of rows is checked successfully
     - sqlclosecheck # Checks that sql.Rows and sql.Stmt are closed.
-    - stylecheck # Stylecheck is a replacement for golint
     - tenv # tenv is analyzer that detects using os.Setenv instead of t.Setenv since Go1.17
 #    - testpackage # linter that makes you use a separate _test package
     - tparallel # tparallel detects inappropriate usage of t.Parallel() method in your Go test codes

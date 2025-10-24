@@ -14,6 +14,8 @@ else
 	PATH:=$(PATH);$(subst /,\\,$(GOBIN_PATH))
 endif
 
+export GOTOOLCHAIN=go1.25.3+auto
+
 .PHONY: all
 all: clean checks unit-test
 

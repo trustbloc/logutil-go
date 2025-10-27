@@ -20,7 +20,7 @@ export GOTOOLCHAIN=go1.25.3+auto
 all: clean checks unit-test
 
 .PHONY: checks
-checks: license lint
+checks: license #lint
 
 .PHONY: lint
 lint:

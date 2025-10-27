@@ -5,7 +5,7 @@
 GOBIN_PATH=$(abspath .)/.build/bin
 
 # Tool commands (overridable)
-GO_VER ?= 1.19
+GO_VER ?= 1.25
 
 OS := $(shell uname)
 ifeq  ($(OS),$(filter $(OS),Darwin Linux))
